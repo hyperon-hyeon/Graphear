@@ -1,0 +1,13 @@
+.student-header{
+    position: fixed; 
+    top: 0;
+    left: 0;
+    width: 100%; 
+    color:#FFC300;
+    border-bottom: 3px solid #FFC300;
+}
+
+.header-greeting {
+    font-size: 30px; 
+    font-weight: bold;
+}

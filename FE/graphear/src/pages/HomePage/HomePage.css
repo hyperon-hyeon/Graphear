@@ -1,0 +1,49 @@
+.home-main-section {
+    padding-top: 80px; 
+    padding-left: 20px;
+    padding-right: 20px;
+    box-sizing: border-box;
+    width: 95vw;
+    height: calc(100vh - 80px);
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+.pdf-box{
+    flex:1;
+}
+
+.solveNwrong {
+    display: flex;
+    gap: 20px; 
+    flex:1;
+    width: 100%;
+}
+
+.choose-box {
+    background-color: var(--graphear-yellow);
+    border-radius: 12px;
+    padding: 30px;
+    color: black;
+    text-align: center; 
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.choose-box:hover {
+    background-color: #fff0be;
+}
+
+.choose-box h2 {
+    font-size: 70px;
+}
+
+.full-width-box {
+    flex: 1;
+}
+
+.half-width-box {
+    flex: 1; 
+}
