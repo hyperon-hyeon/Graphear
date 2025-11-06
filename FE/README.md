@@ -1,16 +1,76 @@
-# React + Vite
+# 📆 4주간 React 프로젝트 개발 계획
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 🧩 개요
+이 프로젝트는 React를 기반으로 하는 Graphear의 웹 애플리케이션으로, 전체 개발 기간은 **4주**이며, 각 주차별로 핵심 기능을 완성해 나간다.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🔹 1주차 — 로고(대기) 페이지 & 메인 페이지
+### 🎯 목표
+- 서비스 첫 진입 시 보여질 **로고/스플래시 페이지** 제작  
+- 전체 구조의 중심이 되는 **메인 페이지(UI 프레임워크 포함)** 구현  
+- 메뉴 선택 컴포넌트 설계 및 라우팅 구조 세팅  
 
-## React Compiler
+### 🧱 작업 내용
+- [ ] React 프로젝트 초기 세팅 (Vite)  
+- [ ] 폴더 구조 설계 (`components/`, `pages/`,`assets/` 등)  
+- [ ] 라우터(`react-router-dom`) 기본 구조 세팅  
+- [ ] 로고 및 로딩 애니메이션 구현  
+- [ ] 메인 페이지 UI 디자인 (메뉴 버튼, 간단한 안내 문구 포함)  
+- [ ] 전역 스타일 관리
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 🔹 2주차 — PDF 변환 페이지 & 문제 오디오 재생 페이지
+### 🎯 목표
+- PDF 문제를 오디오로 변환하는 페이지 구성  
+- 오디오 파일(문제 음성 등)을 재생할 수 있는 페이지 구성  
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### 🧱 작업 내용
+- [ ] 변환 버튼 및 PDF 미리보기 UI 구성  
+- [ ] 오디오 재생 컴포넌트 제작 
+- [ ] 재생/일시정지/재시작 컨트롤 등 UI 구현  
+- [ ] 파일 경로/리소스 관리 구조 확립  
+
+---
+
+## 🔹 3주차 — 선택 페이지 (학교 / 학년 / 과목 선택)
+### 🎯 목표
+- 사용자가 자신의 정보를 선택할 수 있는 **선택 페이지** 구현  
+- 이후 API 연동 시 이 선택값이 요청 파라미터로 활용되도록 설계  
+
+### 🧱 작업 내용
+- [ ] 드롭다운 or 셀렉트 박스 UI 제작  
+- [ ] 전역 상태 관리 도입 
+- [ ] 선택값 임시 저장 기능 추가 (LocalStorage or 전역 상태)  
+- [ ] 페이지 간 데이터 전달 테스트  
+
+---
+
+## 🔹 4주차 — API 연동 및 전체 마무리
+### 🎯 목표
+- 실제 API와 연결해 데이터 송수신 기능 구현  
+- 전체 기능 통합 및 버그 수정  
+- UI 디테일 조정 및 배포 준비  
+
+### 🧱 작업 내용
+- [ ] 백엔드 API 연결 (`axios` or `fetch`)  
+- [ ] 선택값 기반 데이터 요청 및 렌더링  
+- [ ] 오류 처리 및 로딩 상태 표시  
+- [ ] 전반적 UI/UX 개선
+- [ ] 프로젝트 빌드 및 배포 테스트 
+
+---
+
+## 📚 기술 스택
+| 구분 | 사용 기술 |
+|------|------------|
+| Framework | React (with Vite) |
+| Styling | Styled-Components |
+| State Management | 미정 |
+| Routing | React Router v6 |
+| PDF | 미정 |
+| Audio | 미정 |
+| Deployment | 미정 |
+
+---
