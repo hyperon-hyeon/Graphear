@@ -1,11 +1,16 @@
-# Graphear
-시각장애 학생의 학습 보조를 위한 서비스「그래피어(Graphear)」
+# React + Vite
 
-## 👥 조원
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-| 정승빈 | 이진 | 이혜연 |
-|:------:|:------:|:------:|
-| <img src="https://github.com/binii0124.png" width="150" height="150" /> | <img src="https://github.com/yoonyijin.png" width="150" height="150" /> | <img src="https://github.com/hyperon-hyeon.png" width="150" height="150" /> 
-| [@binii0124](https://github.com/binii0124) | [@yoonyijin](https://github.com/yoonyijin) | [@hyperon-hyeon](https://github.com/hyperon-hyeon) |
+Currently, two official plugins are available:
 
----
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+
+## React Compiler
+
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+
+## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
