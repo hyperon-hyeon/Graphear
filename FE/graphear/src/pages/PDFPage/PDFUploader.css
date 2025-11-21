@@ -1,90 +1,41 @@
 .pdf-page-container{
-    width: 80vw;
+    height: 95vh;
     display: flex;
     flex-direction: column;
-    height:80vh;
+    justify-content: center;
+    margin: 0; 
+    padding: 0;
+    background-color: black; 
 }
 
 .pdf-content-area{
-    background-color: var(--graphear-yellow);
+    margin-top: 30px;
+    margin-left: 20px;
+    margin-right: 20px;
     border-radius: 12px;
-    height: 90%;
+    background-color: var(--graphear-yellow);
+    flex-grow: 1; 
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     justify-content: center;
     align-items: center; 
+    padding: 20px;
 }
 
 .pdf-uploader-panel{
     display: flex;
     flex-direction: column;
-    flex:1;
-    flex-basis: 50%; 
-    flex-grow: 1; 
-    padding-right: 15px;
+    background-color: var(--graphear-yellow);
+    width: 90%;
+    padding: 0; 
 }
-.pdf-display-panel {
-    flex: 1;
-    flex-basis: 50%;
-    flex-grow: 1;
+
+.upload-area-container {
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
-    width:100%;
-    height: 90%;
-    font-size: large;
-    padding-left: 15px; 
-}
-
-.extracted-text-content {
-    flex-grow: 1;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    font-family: 'Pretendard', sans-serif;
-    line-height: 1.6;
-    flex-grow: 1;
-    height: 90%;
-    min-height: 0; 
-    overflow-y: auto;
-}
-
-.upload-button {
-    padding: 12px 25px;
-    border-radius: 8px;
-    font-size: 1.1em;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s, box-shadow 0.2s;
-    border: none;
+    align-items: center;
     width: 100%;
-    margin-top: 15px;
-}
-
-.button-group {
-    width: 100%; 
-    display: flex;
-    justify-content: center;
-    gap: 15px; 
-}
-
-.upload-button-active:hover, .btn-primary:hover {
-    background-color: black;
-    border: var(--graphear-yellow) solid ;
-    color:var(--graphear-yellow);
-}
-.btn-primary{
-    background-color: var(--graphear-yellow);
-    color:black;
-    border-radius: 12px;
-    font-size: xx-large;
-    font-weight: bolder;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    flex-grow: 1;
-    padding:20px;
-    margin-top:20px;
+    padding: 20px; 
 }
 
 .file-input-wrapper {
@@ -100,33 +51,93 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 200px; 
-    width: 90%; 
-    border-radius: 10px;
+    height: 250px; 
+    width: 100%; 
+    border-radius: 15px;
     cursor: pointer;
     transition: all 0.3s ease;
     text-align: center;
     padding: 15px;
-}
-
-.file-label-unselected:hover {
-    background-color: black;
-    color:var(--graphear-yellow);
-}
-
-.file-label-selected {
-    background-color: black;
-    border: var(--graphear-yellow) solid ;
-    color:var(--graphear-yellow);
+    background-color: transparent; 
 }
 
 .file-status-text {
-    font-size:large;
+    font-size: xx-large;
     font-weight: bolder;
 }
 
 .file-name {
     font-weight: 700;
-    font-size: mediem;
+    font-size: x-large;
     padding: 5px 0;
+}
+
+.hidden-file-input {
+    display: none;
+}
+
+
+.pdf-action-buttons {
+    width: 100%;
+    margin: 0; 
+    padding: 20px 40px; 
+    box-sizing: border-box;
+}
+
+.button-group {
+    width: 100%; 
+    display: flex;
+    justify-content: center; 
+    gap: 30px; 
+}
+
+.btn-primary{
+    background-color: var(--graphear-yellow);
+    color: black;
+    border-radius: 12px;
+    font-size: xx-large;
+    font-weight: bolder;
+    padding: 20px 40px; 
+    border: none;
+    cursor: pointer;
+    flex-grow: 1; 
+    max-width: 50%;
+    margin-top: 0; 
+}
+
+.upload-button-active:hover, .btn-primary:hover {
+    background-color: black;
+    color: var(--graphear-yellow);
+}
+
+
+.error-message {
+    color: #cc0000;
+    justify-content: center;
+    align-items: center;
+    background-color: #fdfdfd;
+    border: 1px solid #cc0000;
+    padding: 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    width: 90%;
+    text-align: center;
+    margin-top: 10px;
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid var(--graphear-yellow);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 10px;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
