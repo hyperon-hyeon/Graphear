@@ -1,0 +1,132 @@
+.pdf-page-container{
+    width: 80vw;
+    display: flex;
+    flex-direction: column;
+    height:80vh;
+}
+
+.pdf-content-area{
+    background-color: var(--graphear-yellow);
+    border-radius: 12px;
+    height: 90%;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center; 
+}
+
+.pdf-uploader-panel{
+    display: flex;
+    flex-direction: column;
+    flex:1;
+    flex-basis: 50%; 
+    flex-grow: 1; 
+    padding-right: 15px;
+}
+.pdf-display-panel {
+    flex: 1;
+    flex-basis: 50%;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    width:100%;
+    height: 90%;
+    font-size: large;
+    padding-left: 15px; 
+}
+
+.extracted-text-content {
+    flex-grow: 1;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: 'Pretendard', sans-serif;
+    line-height: 1.6;
+    flex-grow: 1;
+    height: 90%;
+    min-height: 0; 
+    overflow-y: auto;
+}
+
+.upload-button {
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, box-shadow 0.2s;
+    border: none;
+    width: 100%;
+    margin-top: 15px;
+}
+
+.button-group {
+    width: 100%; 
+    display: flex;
+    justify-content: center;
+    gap: 15px; 
+}
+
+.upload-button-active:hover, .btn-primary:hover {
+    background-color: black;
+    border: var(--graphear-yellow) solid ;
+    color:var(--graphear-yellow);
+}
+.btn-primary{
+    background-color: var(--graphear-yellow);
+    color:black;
+    border-radius: 12px;
+    font-size: xx-large;
+    font-weight: bolder;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    flex-grow: 1;
+    padding:20px;
+    margin-top:20px;
+}
+
+.file-input-wrapper {
+    margin-bottom: 20px;
+    display: flex; 
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.file-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px; 
+    width: 90%; 
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    padding: 15px;
+}
+
+.file-label-unselected:hover {
+    background-color: black;
+    color:var(--graphear-yellow);
+}
+
+.file-label-selected {
+    background-color: black;
+    border: var(--graphear-yellow) solid ;
+    color:var(--graphear-yellow);
+}
+
+.file-status-text {
+    font-size:large;
+    font-weight: bolder;
+}
+
+.file-name {
+    font-weight: 700;
+    font-size: mediem;
+    padding: 5px 0;
+}
