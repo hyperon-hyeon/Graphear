@@ -8,9 +8,9 @@ import PNG_ICON_PATH_REWIND from "../../assets/10rewind.png";
 import PNG_ICON_PATH_FORWARD from "../../assets/10forward.png";
 import PNG_ICON_PATH_BACKARROW from "../../assets/backArrow.png";
 
-import LISTENING_TEST from "../../assets/2026Listening.mp3"; 
-import LISTENING_ANSWER from "../../assets/2026_10.mp3"; 
-import LISTEN_SOLVING from "../../assets/2026_16,17.mp3";
+import LISTENING_TEST from "../../assets/listening/2026Listening.mp3"; 
+import LISTENING_ANSWER from "../../assets/listening/2026_10.mp3"; 
+import LISTEN_SOLVING from "../../assets/listening/2026_16,17.mp3";
 
 const speeds = [1.0, 1.5, 2.0, 0.5];
 const speedLabels = ["1x", "1.5x", "2x", "0.5x"];
