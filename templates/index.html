@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>Graphear — PDF → Text</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f5fb;
+    }
+    .page {
+      max-width: 1100px;
+      margin: 40px auto;
+      background: white;
+      border-radius: 24px;
+      padding: 32px 40px;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.08);
+    }
+    h1 {
+      margin: 0 0 4px;
+      font-size: 26px;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: #777;
+      margin-bottom: 24px;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 1.1fr 1.4fr;
+      gap: 24px;
+    }
+    .card {
+      border-radius: 20px;
+      padding: 20px 24px;
+      background: #fafafa;
+      border: 1px solid #ececf7;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      height: 380px;
+      box-sizing: border-box;
+    }
+    .card-title {
+      font-weight: 600;
+      font-size: 15px;
+    }
+    .small-text {
+      font-size: 13px;
+      color: #777;
+    }
+    .file-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 4px;
+      margin-bottom: 8px;
+    }
+    .btn-primary {
+      border: none;
+      outline: none;
+      cursor: pointer;
+      border-radius: 999px;
+      padding: 12px 24px;
+      background: #635bff;
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+      box-shadow: 0 10px 24px rgba(99,91,255,0.35);
+    }
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: default;
+      box-shadow: none;
+    }
+    .btn-ghost {
+      border-radius: 999px;
+      border: 1px solid #d0d0e8;
+      background: white;
+      font-size: 11px;
+      padding: 4px 10px;
+      cursor: pointer;
+    }
+    .btn-ghost:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+    .status-ok {
+      font-size: 13px;
+      color: #2b8a3e;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .status-error {
+      font-size: 13px;
+      color: #e03131;
+    }
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: #666;
+    }
+    .page-info span {
+      margin-left: 4px;
+      font-weight: 600;
+      color: #333;
+    }
+    .result-body {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 12px;
+      flex: 1;
+      min-height: 0;
+    }
+    .question-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      border-radius: 12px;
+      background: #ffffff;
+      border: 1px solid #e0e0f0;
+      overflow-y: auto;
+      max-height: 240px;
+    }
+    .question-list li {
+      padding: 8px 10px;
+      font-size: 13px;
+      cursor: pointer;
+      border-bottom: 1px solid #f1f1fa;
+    }
+    .question-list li:last-child {
+      border-bottom: none;
+    }
+    .question-list li.active {
+      background: #635bff;
+      color: white;
+      font-weight: 600;
+    }
+    .question-panel {
+      border-radius: 12px;
+      background: #ffffff;
+      border: 1px solid #e0e0f0;
+      padding: 12px 14px;
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overflow: hidden;
+    }
+    .question-body {
+      flex: 1;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    .choices {
+      margin-top: 4px;
+      padding-left: 16px;
+    }
+    .choices li {
+      margin-bottom: 2px;
+    }
+    .json-link {
+      font-size: 12px;
+      color: #5c7cfa;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .json-panel {
+      margin-top: 4px;
+      font-size: 12px;
+      max-height: 120px;
+      overflow: auto;
+      background: #111;
+      color: #f3f3f3;
+      padding: 8px;
+      border-radius: 8px;
+      display: none;
+    }
+    .tts-controls {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin-top: 4px;
+    }
+    .tts-label {
+      font-size: 11px;
+      color: #666;
+      margin-right: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>Graphear: PDF → Text</h1>
+    <div class="subtitle">시각장애인 수험생을 위한 수학 시험지 분석 도구 · Prototype</div>
+
+    <div class="layout">
+      <!-- 왼쪽: 업로드 -->
+      <section class="card">
+        <div class="card-title">시험지 업로드</div>
+        <div class="small-text">
+          PDF 파일을 업로드하면, Graphear가 페이지별로 제목·문항 텍스트를 분석해 보여줘요.
+        </div>
+
+        <div class="file-row">
+          <label>
+            <input id="pdf-file" type="file" accept="application/pdf" />
+          </label>
+          <button id="upload-convert-btn" class="btn-primary">
+            Upload &amp; Convert
+          </button>
+        </div>
+
+        <div id="upload-status" class="small-text">아직 업로드하지 않았어요.</div>
+        <div id="error-text" class="status-error"></div>
+      </section>
+
+      <!-- 오른쪽: 결과 -->
+      <section class="card">
+        <div class="result-header">
+          <span class="card-title">변환 결과</span>
+          <span class="page-info">
+            페이지 수:
+            <span id="page-count">0</span> · 엔진:
+            <span id="engine-name">unknown</span>
+          </span>
+        </div>
+
+        <div class="result-body">
+          <!-- 문항 목록 -->
+          <ul id="question-list" class="question-list">
+            <!-- JS에서 채움 -->
+          </ul>
+
+          <!-- 문항 상세 -->
+          <div class="question-panel">
+            <div id="question-title" style="font-weight:600;">문항을 선택해주세요.</div>
+            <div id="question-body" class="question-body"></div>
+            <ul id="choices-list" class="choices"></ul>
+
+            <!-- TTS 컨트롤 -->
+            <div class="tts-controls">
+              <span class="tts-label">본문 읽어주기:</span>
+              <button id="tts-play" class="btn-ghost">▶ 재생</button>
+              <button id="tts-pause" class="btn-ghost">⏸ 일시정지</button>
+              <button id="tts-resume" class="btn-ghost">▶ 다시 재생</button>
+              <button id="tts-stop" class="btn-ghost">■ 정지</button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <span id="show-json" class="json-link">원본 JSON 보기 (디버깅용)</span>
+        </div>
+        <pre id="json-raw" class="json-panel"></pre>
+      </section>
+    </div>
+  </div>
+
+  <!-- 브라우저에서 돌아가는 자바스크립트 (Java 아님!) -->
+  <script>
+    let currentPdfId = null;
+    let currentQuestions = [];
+    let currentMeta = {};
+    let currentQuestionIndex = null;
+
+    // 오디오 객체 (일시정지/재개 지원)
+    let ttsAudio = null;
+
+    const fileInput = document.getElementById("pdf-file");
+    const uploadBtn = document.getElementById("upload-convert-btn");
+    const uploadStatus = document.getElementById("upload-status");
+    const errorText = document.getElementById("error-text");
+
+    const pageCountSpan = document.getElementById("page-count");
+    const engineSpan = document.getElementById("engine-name");
+
+    const questionListEl = document.getElementById("question-list");
+    const questionTitleEl = document.getElementById("question-title");
+    const questionBodyEl = document.getElementById("question-body");
+    const choicesListEl = document.getElementById("choices-list");
+
+    const jsonLink = document.getElementById("show-json");
+    const jsonPanel = document.getElementById("json-raw");
+
+    const ttsPlayBtn = document.getElementById("tts-play");
+    const ttsPauseBtn = document.getElementById("tts-pause");
+    const ttsResumeBtn = document.getElementById("tts-resume");
+    const ttsStopBtn = document.getElementById("tts-stop");
+
+    function setError(msg) {
+      if (msg) {
+        errorText.textContent = msg;
+      } else {
+        errorText.textContent = "";
+      }
+    }
+
+    function setStatusOk(msg) {
+      uploadStatus.innerHTML = "✅ " + msg;
+      uploadStatus.className = "status-ok";
+    }
+
+    function setStatusNormal(msg) {
+      uploadStatus.textContent = msg;
+      uploadStatus.className = "small-text";
+    }
+
+    function clearResultUI() {
+      pageCountSpan.textContent = "0";
+      engineSpan.textContent = "unknown";
+      questionListEl.innerHTML = "";
+      questionTitleEl.textContent = "문항을 선택해주세요.";
+      questionBodyEl.textContent = "";
+      choicesListEl.innerHTML = "";
+      jsonPanel.style.display = "none";
+      jsonPanel.textContent = "";
+      stopTts();
+    }
+
+    async function handleUploadAndConvert() {
+      setError("");
+      clearResultUI();
+
+      const file = fileInput.files[0];
+      if (!file) {
+        setError("먼저 PDF 파일을 선택해 주세요.");
+        return;
+      }
+
+      uploadBtn.disabled = true;
+      setStatusNormal("업로드 및 변환 중... 잠시만 기다려주세요.");
+
+      try {
+        // 1) /upload 호출
+        const form = new FormData();
+        form.append("file", file);
+
+        const uploadRes = await fetch("/upload", {
+          method: "POST",
+          body: form,
+        });
+
+        const uploadJson = await uploadRes.json();
+        if (!uploadJson.ok) {
+          throw new Error(uploadJson.error || "업로드 실패");
+        }
+
+        currentPdfId = uploadJson.pdf_id;
+        setStatusOk("업로드 완료! (pdf_id: " + currentPdfId + ")");
+
+        // 2) /convert 호출
+        const convertRes = await fetch("/convert", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ pdf_id: currentPdfId }),
+        });
+
+        const convertJson = await convertRes.json();
+        console.log("CONVERT RESPONSE:", convertJson);
+
+        if (!convertJson.ok) {
+          throw new Error(convertJson.error || "변환 실패");
+        }
+
+        currentMeta = convertJson.meta || {};
+        currentQuestions = convertJson.questions || [];
+
+        // 상단 정보 표시
+        pageCountSpan.textContent = currentMeta.page_count ?? 0;
+        engineSpan.textContent = currentMeta.engine || "unknown";
+
+        // JSON 패널 내용
+        jsonPanel.textContent = JSON.stringify(convertJson, null, 2);
+
+        // 문항 목록 채우기
+        renderQuestionList();
+
+        if (currentQuestions.length > 0) {
+          selectQuestion(0);
+        } else {
+          questionTitleEl.textContent = "문항이 감지되지 않았어요.";
+        }
+
+      } catch (err) {
+        console.error(err);
+        setError(err.message || "알 수 없는 오류가 발생했어요.");
+        setStatusNormal("다시 시도해 주세요.");
+      } finally {
+        uploadBtn.disabled = false;
+      }
+    }
+
+    function renderQuestionList() {
+      questionListEl.innerHTML = "";
+      currentQuestions.forEach((q, idx) => {
+        const li = document.createElement("li");
+        const label = q.global_id || q.id || (idx + 1).toString();
+        li.textContent = label + "번";
+        li.dataset.index = idx;
+        li.addEventListener("click", () => selectQuestion(idx));
+        questionListEl.appendChild(li);
+      });
+    }
+
+    function selectQuestion(index) {
+      const items = questionListEl.querySelectorAll("li");
+      items.forEach((el, i) => {
+        el.classList.toggle("active", i === index);
+      });
+
+      const q = currentQuestions[index];
+      if (!q) return;
+
+      currentQuestionIndex = index;
+
+      const label = q.global_id || q.id || (index + 1).toString();
+      questionTitleEl.textContent = label + "번 문제";
+      questionBodyEl.textContent = q.body || "";
+
+      choicesListEl.innerHTML = "";
+      if (Array.isArray(q.choices) && q.choices.length > 0) {
+        q.choices.forEach((ch) => {
+          const li = document.createElement("li");
+          li.textContent = ch;
+          choicesListEl.appendChild(li);
+        });
+      }
+
+      // 문제 바꾸면 기존 음성은 정지
+      stopTts();
+    }
+
+    // ----- TTS 관련 -----
+    async function playTtsForCurrentQuestion() {
+      if (currentQuestionIndex === null || !currentQuestions[currentQuestionIndex]) {
+        alert("먼저 문항을 선택해 주세요.");
+        return;
+      }
+
+      const q = currentQuestions[currentQuestionIndex];
+      const text = q.body || "";
+      if (!text.trim()) {
+        alert("읽을 본문 텍스트가 없어요.");
+        return;
+      }
+
+      try {
+        // 기존 재생 중인 오디오가 있으면 정지
+        stopTts();
+
+        const res = await fetch("/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        });
+
+        if (!res.ok) {
+          const errJson = await res.json().catch(() => null);
+          const msg = errJson && errJson.error ? errJson.error : "TTS 요청 실패";
+          alert(msg);
+          return;
+        }
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+
+        ttsAudio = new Audio(url);
+        ttsAudio.play();
+      } catch (err) {
+        console.error(err);
+        alert("TTS 재생 중 오류가 발생했어요.");
+      }
+    }
+
+    function pauseTts() {
+      if (ttsAudio) {
+        ttsAudio.pause();
+      }
+    }
+
+    function resumeTts() {
+      if (ttsAudio) {
+        ttsAudio.play();
+      }
+    }
+
+    function stopTts() {
+      if (ttsAudio) {
+        ttsAudio.pause();
+        ttsAudio.currentTime = 0;
+        ttsAudio = null;
+      }
+    }
+
+    // ----- 이벤트 바인딩 -----
+    jsonLink.addEventListener("click", () => {
+      if (jsonPanel.style.display === "none") {
+        jsonPanel.style.display = "block";
+      } else {
+        jsonPanel.style.display = "none";
+      }
+    });
+
+    uploadBtn.addEventListener("click", handleUploadAndConvert);
+
+    ttsPlayBtn.addEventListener("click", playTtsForCurrentQuestion);
+    ttsPauseBtn.addEventListener("click", pauseTts);
+    ttsResumeBtn.addEventListener("click", resumeTts);
+    ttsStopBtn.addEventListener("click", stopTts);
+  </script>
+</body>
+</html>
