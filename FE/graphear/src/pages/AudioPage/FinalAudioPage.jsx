@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom'; 
-import './AudioPage.css'; 
+import './FinalAudioPage.css'; 
 
 import PNG_ICON_PATH_PLAY from "../../assets/play.png";
 import PNG_ICON_PATH_PAUSE from "../../assets/pause.png";
@@ -92,7 +92,7 @@ const BackIcon = () => (
 );
 
 
-const AudioPage = () => {
+const FinalAudioPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -231,53 +231,13 @@ const togglePlayPause = () => {
         setIsPlaying(false);
     }
 };
-
-// ----------------------------------------------------
-// TTS 음원 다운로드 함수
-// ----------------------------------------------------
-const handleDownloadSolve = async () => {
-    if (!ttsText || ttsText === "PDF에서 추출된 해설 텍스트가 없습니다. 기본 텍스트를 사용합니다.") {
-        console.error("다운로드할 텍스트가 없습니다.");
-        setTtsError("해설 텍스트가 없어 음원 다운로드를 시작할 수 없습니다.");
-        return;
-    }
-    if (ttsLoading) return;
-    
-    setTtsLoading(true);
-    setTtsError(null);
-    
+const handleGoToPdfPage = () => {
     if (audioRef.current && !audioRef.current.paused) {
         audioRef.current.pause();
         setIsPlaying(false);
     }
-
-    try {
-        // 1. TTS 파일 URL(이미 절대 경로)을 서버에서 받아옵니다.
-        const fullDownloadUrl = await fetchTtsAudio(ttsText); 
-
-        // 2. 다운로드 링크 생성
-        const link = document.createElement('a');
-        link.href = fullDownloadUrl; // 서버에서 제공한 파일 URL을 다운로드 링크로 사용
-        
-        // 🚨 페이지 이동 방지: download 속성을 강제로 적용합니다.
-        link.setAttribute('download', 'TTS_Solution.mp3'); 
-
-        let filename = problemTitle.replace(/\s/g, '_').replace(/[^a-zA-Z0-9_.]/g, '') || 'TTS_Solution';
-        filename += '.mp3';
-
-        link.download = filename; 
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        console.log(`✅ 음성 파일 다운로드 시작: ${filename}`); 
-
-    } catch (e) {
-        console.error('TTS 음원 생성 및 다운로드 오류:', e);
-        setTtsError("음원 생성/다운로드 실패: " + e.message);
-    } finally {
-        setTtsLoading(false);
-    }
+    // '/pdf' 경로로 이동
+    navigate('/pdf-extractor');
 };
 
 
@@ -331,7 +291,6 @@ const handleDownloadSolve = async () => {
 
         triggerInitialLoad();
         
-        document.title = problemTitle; 
         
         // 2. 오디오 이벤트 리스너 설정 (기존 로직 유지)
         const onLoadedMetadata = () => {
@@ -397,13 +356,17 @@ const handleDownloadSolve = async () => {
                 </span>
             </div>
 
-            {/* 메인 오디오 소스는 currentPlayingSrc를 동적으로 사용 */}
             <audio 
                 ref={audioRef} 
                 id="my-audio" 
                 src={currentPlayingSrc || undefined} 
                 preload="metadata" 
             />
+            
+            <div className="time-display">
+                <span id="current-time">{formatTime(currentTime)}</span>
+                <span id="duration">{formatTime(duration)}</span>
+            </div>
 
             <div className="audio-controls">
                 
@@ -432,10 +395,6 @@ const handleDownloadSolve = async () => {
                 </button>
             </div>
 
-            <div className="time-display">
-                <span id="current-time">{formatTime(currentTime)}</span>
-                <span id="duration">{formatTime(duration)}</span>
-            </div>
             
             {ttsError && (
                 <div className="tts-error-message">
@@ -446,43 +405,27 @@ const handleDownloadSolve = async () => {
             <div className="action-area">
                 
                 <div className="action-row">
-                    <div className="error-check-group">
-                        <input type="checkbox" id="error-check" />
-                        <label htmlFor="error-check">오답 체크</label>
-                    </div>
                     
                     <button 
-                    id="explanation-play-btn" 
                     onClick={handleTtsPlay}
-                    className={`primary-btn answer-play-btn ${ttsLoading ? 'is-loading' : ''}`}
+                    className={`bottom-btn reset-play-btn ${ttsLoading ? 'is-loading' : ''}`}
                     disabled={ttsLoading || !ttsText || ttsText === "PDF에서 추출된 해설 텍스트가 없습니다. 기본 텍스트를 사용합니다."} 
                 >
-                    {ttsLoading ? '음성 생성 중...' : '해설 음성 재생 (TTS)'}
+                    {ttsLoading ? '음성 생성 중...' : '처음부터 다시 재생'}
                 </button>
                 </div>
 
-
-                {/* 하단의 다운로드 버튼 (두 번째 다운로드 버튼) */}
                 <button 
-                    id="explanation-download-btn" 
-                    onClick={handleDownloadSolve} 
-                    className={`primary-btn explanation-play-btn ${ttsLoading ? 'is-loading' : ''}`}
-                    disabled={ttsLoading || !ttsText || ttsText === "PDF에서 추출된 해설 텍스트가 없습니다. 기본 텍스트를 사용합니다."} 
+                    id="back-To-select-btn" 
+                    onClick={handleGoToPdfPage} 
+                    className="bottom-btn explanation-play-btn"
                 >
-                    {ttsLoading ? '음성 생성 중...' : '해설 음성 다운로드'}
+                    PDF 선택 페이지로 돌아가기
                 </button>
                 
-                <div className="action-row">
-                    <button id="prev-btn" className="secondary-btn prev-next-btn">
-                        이전 문제
-                    </button>
-                    <button id="next-btn" className="secondary-btn prev-next-btn">
-                        다음 문제
-                    </button>
-                </div>
             </div>
         </div>
     );
 };
 
-export default AudioPage;
+export default FinalAudioPage;
