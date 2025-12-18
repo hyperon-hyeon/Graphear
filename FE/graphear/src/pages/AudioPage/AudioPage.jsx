@@ -1,16 +1,14 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom'; 
+import { useNavigate, useLocation } from 'react-router-dom'; 
 import './AudioPage.css'; 
 
-const PNG_ICON_PATH_PLAY = "../../assets/play.png";
-const PNG_ICON_PATH_PAUSE = "../../assets/pause.png";
-const PNG_ICON_PATH_REWIND = "../../assets/10rewind.png";
-const PNG_ICON_PATH_FORWARD = "../../assets/10forward.png";
-const PNG_ICON_PATH_BACKARROW = "../../assets/backArrow.png";
+import PNG_ICON_PATH_PLAY from "../../assets/play.png";
+import PNG_ICON_PATH_PAUSE from "../../assets/pause.png";
+import PNG_ICON_PATH_REWIND from "../../assets/10rewind.png";
+import PNG_ICON_PATH_FORWARD from "../../assets/10forward.png";
+import PNG_ICON_PATH_BACKARROW from "../../assets/backArrow.png";
 
-const LISTENING_TEST = null; 
-const LISTENING_ANSWER = null; 
-const LISTEN_SOLVING = null; 
+import LISTENING_TEST from "../../assets/listening/2026Listening.mp3"; 
 
 const speeds = [1.0, 1.5, 2.0, 0.5];
 const speedLabels = ["1x", "1.5x", "2x", "0.5x"];
@@ -24,6 +22,9 @@ const formatTime = (seconds) => {
     return `${min}:${sec < 10 ? '0' : ''}${sec}`;
 };
 
+// ----------------------------------------------------
+// fetchTtsAudio 함수: 서버와 통신하여 TTS URL을 받아옴
+// ----------------------------------------------------
 const fetchTtsAudio = async (text) => {
     const response = await fetch(`${BACKEND_URL}/api/synthesize-speech`, {
         method: 'POST',
@@ -34,18 +35,30 @@ const fetchTtsAudio = async (text) => {
             speakingRate: 0.95 
         }),
     });
-
+    
     if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || response.statusText);
+        let errorDetails = response.statusText;
+        try {
+            const errorData = await response.json();
+            errorDetails = errorData.details || errorData.error || errorDetails;
+        } catch (e) {
+        }
+        throw new Error(`서버 오류 (${response.status}): ${errorDetails}`);
     }
 
-    const data = await response.json();
-    if (!data.audioContent) {
-        throw new Error('서버에서 오디오 콘텐츠를 받지 못했습니다.');
+    try {
+        const data = await response.json();
+        
+        if (!data.audioUrl) {
+            throw new Error('서버 응답 형식 오류: audioUrl 필드를 받지 못했습니다.');
+        }
+        
+        return data.audioUrl; 
+    } catch (e) {
+        // JSON 파싱 자체에 실패한 경우
+        console.error("JSON 파싱 오류:", e);
+        throw new Error('서버 응답을 JSON으로 처리하는 데 실패했습니다.');
     }
-
-    return `data:audio/mp3;base64,${data.audioContent}`;
 };
 
 
@@ -81,102 +94,193 @@ const BackIcon = () => (
 
 const AudioPage = () => {
     const navigate = useNavigate();
-    
-    const audioRef = useRef(null);
+    const location = useLocation();
+
+    // Ref 선언
+    const audioRef = useRef(null); 
     const progressContainerRef = useRef(null);
     const progressFillRef = useRef(null);
+    const initialTtsAttempted = useRef(false); // TTS 자동 로드 추적용 Ref
 
-    // [상태 초기값 변경] 로컬 파일 대신 null로 초기화
-    const [problemTitle, setProblemTitle] = useState('문제 제목을 불러오는 중...'); 
-    const [mainAudioSrc, setMainAudioSrc] = useState(LISTENING_TEST); // 초기값 null
-    const [answerAudioSrc, setAnswerAudioSrc] = useState(LISTENING_ANSWER); // 초기값 null
-    const [solveAudioSrc, setSolveAudioSrc] = useState(LISTEN_SOLVING); // 초기값 null
-    
-    // [NEW TTS STATE]
-    const [ttsText, setTtsText] = useState("여기에 PDF에서 추출된 해설 텍스트를 입력하거나 로드하여 음성으로 변환합니다.");
+    const initialProblemTitle = location.state?.problemTitle || '문제 제목을 불러오는 중...';
+    const initialTtsText = location.state?.extractedText || "PDF에서 추출된 해설 텍스트가 없습니다. 기본 텍스트를 사용합니다.";
+
+    // State 정의
+    const [problemTitle, setProblemTitle] = useState(initialProblemTitle); 
+    const [headerTitle, setHeaderTitle] = useState('문제 듣기');
+    const [mainAudioSrc] = useState(LISTENING_TEST); // 더미 오디오는 상태가 아닌 상수로 유지
+    const [ttsText, setTtsText] = useState(initialTtsText);
     const [ttsLoading, setTtsLoading] = useState(false);
     const [ttsError, setTtsError] = useState(null);
-    const [currentPlayingSrc, setCurrentPlayingSrc] = useState(null); // 현재 재생 중인 소스 (TTS 또는 null)
+    
+    //  초기 currentPlayingSrc를 null로 설정하여 더미 재생을 방지합니다.
+    const [currentPlayingSrc, setCurrentPlayingSrc] = useState(null); 
 
-    // [ORIGINAL STATE] 플레이어 상태
+    // 플레이어 상태
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [speedIndex, setSpeedIndex] = useState(INITIAL_SPEED_INDEX);
     const [isSeeking, setIsSeeking] = useState(false);
     
-    // 오디오 로드 및 재생 유틸리티
-    const loadAndPlayAudio = useCallback((newSrc) => {
-        if (!audioRef.current || !newSrc) {
-            console.error("오디오 요소나 음원 경로가 유효하지 않습니다.");
-            return;
-        }
 
-        if (!audioRef.current.paused) {
-            audioRef.current.pause();
-        }
+// 오디오 로드 및 재생 유틸리티
+const loadAndPlayAudio = useCallback((newSrc) => {
+    if (!audioRef.current || !newSrc) {
+        console.error("오디오 요소나 음원 경로가 유효하지 않습니다.");
+        return;
+    }
 
-        setCurrentPlayingSrc(newSrc);
+    // 기존 오디오 재생 정지
+    if (!audioRef.current.paused) {
+        audioRef.current.pause();
+    }
+
+    // 1. 새로운 소스 설정
+    setCurrentPlayingSrc(newSrc);
+    
+    // audio 요소의 src를 직접 변경
+    audioRef.current.src = newSrc;
+    audioRef.current.currentTime = 0;
+    audioRef.current.load();
+    
+    // play() 호출을 제거합니다. 
+    setIsPlaying(false);
+    
+}, []);
+
+// ----------------------------------------------------
+// handleTtsPlay 함수 (자동 재생 로직 개선 및 URL 출력 제거)
+// ----------------------------------------------------
+const handleTtsPlay = useCallback(async () => {
+    if (!ttsText || ttsLoading) return;
+
+    if (ttsText === "PDF에서 추출된 해설 텍스트가 없습니다. 기본 텍스트를 사용합니다.") {
+        setTtsError("재생할 해설 텍스트가 없습니다.");
+        return;
+    }
+
+    setTtsLoading(true);
+    setTtsError(null);
+
+    try {
+        // 1. 서버에서 TTS 음성 파일 URL(이미 절대 경로)을 받아옵니다.
+        const fullAudioUrl = await fetchTtsAudio(ttsText);
         
-        // 오디오 요소 업데이트가 완료될 시간을 주기 위해 약간 지연
-        setTimeout(() => {
-            if(audioRef.current.src !== newSrc) {
-                 audioRef.current.src = newSrc;
+        // 2. 새 URL로 오디오 로드
+        loadAndPlayAudio(fullAudioUrl);
+
+        console.log(`✅ TTS 음성 로드 성공!`); 
+
+        // 3. 로드가 완료될 때까지 기다림 
+        const audio = audioRef.current;
+        await new Promise(resolve => {
+            if (audio.readyState >= 1) { // HAVE_METADATA 이상이면 바로 resolve
+                resolve();
+            } else {
+                audio.addEventListener('loadedmetadata', resolve, { once: true });
             }
-            audioRef.current.currentTime = 0;
-            audioRef.current.load(); 
-            audioRef.current.play()
-                .then(() => setIsPlaying(true))
-                .catch(e => {
-                    console.error("오디오 재생 실패:", e);
-                    setIsPlaying(false);
-                });
-        }, 50);
+        });
 
-    }, []);
+        // 4. 🚨 로드 완료 후 자동 재생 시작 및 상태 업데이트
+        audio.play()
+            .then(() => {
+                setIsPlaying(true); 
+                console.log(`✅ TTS 음성 재생 시작 (인라인)`);
+            })
+            .catch(e => {
+                // 자동 재생 실패(NotAllowedError) 시 에러 처리
+                const errorMessage = e.name === 'NotAllowedError' 
+                    ? '자동 재생이 차단되었습니다. 메인 재생 버튼을 수동으로 눌러주세요.' 
+                    : `재생 실패: ${e.message}.`;
+                setTtsError(errorMessage);
+                setIsPlaying(false);
+                console.error('오디오 재생 실패 (브라우저 정책):', e);
+            });
+
+    } catch (e) {
+        console.error('TTS 음성 생성 및 로드 오류:', e);
+        // fetchTtsAudio에서 발생한 상세 오류 메시지를 바로 표시
+        setTtsError(`TTS 생성 실패: ${e.message}`); 
+        setIsPlaying(false);
+    } finally {
+        setTtsLoading(false);
+    }
+}, [ttsText, ttsLoading, loadAndPlayAudio]);
+
+// ----------------------------------------------------
+// togglePlayPause 함수 (순수 재생/일시정지 기능만 수행)
+// ----------------------------------------------------
+const togglePlayPause = () => {
+    if (!currentPlayingSrc || !audioRef.current) {
+        // TTS 로드가 완료되지 않았다면 아무것도 하지 않습니다. (자동 로드가 실패한 경우)
+        setTtsError("TTS 음원 로드 중이거나 로드에 실패했습니다. 잠시 후 다시 시도하거나 재생 버튼을 다시 누르세요.");
+        return; 
+    }
+
+    if (audioRef.current.paused) {
+        audioRef.current.play().catch(e => {
+            if (e.name === 'NotAllowedError') {
+                 setTtsError("브라우저 정책으로 인해 자동 재생이 차단되었습니다. 수동으로 다시 눌러주세요.");
+            }
+            console.error("오디오 재생 실패:", e);
+        });
+        setIsPlaying(true);
+    } else {
+        audioRef.current.pause();
+        setIsPlaying(false);
+    }
+};
+
+// ----------------------------------------------------
+// TTS 음원 다운로드 함수
+// ----------------------------------------------------
+const handleDownloadSolve = async () => {
+    if (!ttsText || ttsText === "PDF에서 추출된 해설 텍스트가 없습니다. 기본 텍스트를 사용합니다.") {
+        console.error("다운로드할 텍스트가 없습니다.");
+        setTtsError("해설 텍스트가 없어 음원 다운로드를 시작할 수 없습니다.");
+        return;
+    }
+    if (ttsLoading) return;
     
-    const togglePlayPause = () => {
-        if (!audioRef.current) return;
-
-        if (audioRef.current.paused) {
-            audioRef.current.play().catch(e => console.error("오디오 재생 실패:", e));
-            setIsPlaying(true);
-        } else {
-            audioRef.current.pause();
-            setIsPlaying(false);
-        }
-    };
-
-    // [ORIGINAL] 답 재생 (로컬 파일 대신 answerAudioSrc 상태 사용)
-    const handleAnswerPlay = () => {
-        loadAndPlayAudio(answerAudioSrc);
-    };
-
-    // [MODIFIED] 해설 재생 (TTS 기능 사용)
-    const handleSolvePlay = async () => {
-        if (!ttsText) {
-             console.error("변환할 텍스트가 없습니다.");
-             return;
-        }
-        if (ttsLoading) return;
-        
-        setTtsLoading(true);
-        setTtsError(null);
-        
-        try {
-            const audioDataUrl = await fetchTtsAudio(ttsText);
-            // TTS 결과를 currentPlayingSrc에 저장하여 재생
-            loadAndPlayAudio(audioDataUrl); 
-
-        } catch (e) {
-            console.error('TTS 변환 및 재생 오류:', e);
-            setTtsError("음성 변환 실패: " + e.message);
-            setIsPlaying(false);
-        } finally {
-            setTtsLoading(false);
-        }
-    };
+    setTtsLoading(true);
+    setTtsError(null);
     
+    if (audioRef.current && !audioRef.current.paused) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+    }
+
+    try {
+        // 1. TTS 파일 URL(이미 절대 경로)을 서버에서 받아옵니다.
+        const fullDownloadUrl = await fetchTtsAudio(ttsText); 
+
+        // 2. 다운로드 링크 생성
+        const link = document.createElement('a');
+        link.href = fullDownloadUrl; // 서버에서 제공한 파일 URL을 다운로드 링크로 사용
+        
+        // 🚨 페이지 이동 방지: download 속성을 강제로 적용합니다.
+        link.setAttribute('download', 'TTS_Solution.mp3'); 
+
+        let filename = problemTitle.replace(/\s/g, '_').replace(/[^a-zA-Z0-9_.]/g, '') || 'TTS_Solution';
+        filename += '.mp3';
+
+        link.download = filename; 
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        console.log(`✅ 음성 파일 다운로드 시작: ${filename}`); 
+
+    } catch (e) {
+        console.error('TTS 음원 생성 및 다운로드 오류:', e);
+        setTtsError("음원 생성/다운로드 실패: " + e.message);
+    } finally {
+        setTtsLoading(false);
+    }
+};
+
+
     const toggleGoHome = () => { navigate('/home'); };
     const seekBy = (seconds) => {
         if (!audioRef.current) return;
@@ -189,57 +293,47 @@ const AudioPage = () => {
             audioRef.current.playbackRate = speeds[newIndex];
         }
     };
-    const seekToPosition = useCallback(() => { /* ... */ }, []);
-    const handleMouseDown = (e) => { /* ... */ };
-    const handleMouseMove = useCallback((e) => { /* ... */ }, [isSeeking, seekToPosition]);
-    const handleMouseUp = () => { /* ... */ };
-    const handleTouchMove = (e) => { /* ... */ };
-    const handleTouchStart = (e) => { /* ... */ };
-    const handleTouchEnd = () => { /* ... */ };
+    const seekToPosition = useCallback(() => { /* TODO: Seeking 로직 구현 필요 */ }, []);
+    const handleMouseDown = (e) => { /* TODO: Seeking 로직 구현 필요 */ };
+    const handleMouseMove = useCallback((e) => { /* TODO: Seeking 로직 구현 필요 */ }, [isSeeking, seekToPosition]);
+    const handleMouseUp = () => { /* TODO: Seeking 로직 구현 필요 */ };
+    const handleTouchMove = (e) => { /* TODO: Seeking 로직 구현 필요 */ };
+    const handleTouchStart = (e) => { /* TODO: Seeking 로직 구현 필요 */ };
+    const handleTouchEnd = () => { /* TODO: Seeking 로직 구현 필요 */ };
 
+    // ----------------------------------------------------
+    // 초기 로드 및 TTS 자동 로드 트리거 Effect
+    // ----------------------------------------------------
     useEffect(() => {
-        const touchOptions = { passive: false }; 
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
-        document.addEventListener('touchmove', handleTouchMove, touchOptions); 
-        document.addEventListener('touchend', handleTouchEnd);
-        return () => {
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
-            document.removeEventListener('touchmove', handleTouchMove, touchOptions);
-            document.removeEventListener('touchend', handleTouchEnd);
-        };
-    }, [handleMouseMove, handleMouseUp]); 
-
-    useEffect(() => {
-        const fetchProblemData = async () => {
-            try {
-                await new Promise(resolve => setTimeout(resolve, 1000)); 
-
-                // NOTE: 로컬 파일을 사용하지 않으므로 초기값은 null 상태 유지
-                const data = {
-                    title: "PDF 해설 음성 플레이어",
-                    mainSrc: LISTENING_TEST, // null
-                    answerSrc: LISTENING_ANSWER, // null
-                    solveSrc: LISTEN_SOLVING // null
-                };
-                
-                setProblemTitle(data.title);
-                setMainAudioSrc(data.mainSrc);
-                setAnswerAudioSrc(data.answerSrc);
-                setSolveAudioSrc(data.solveSrc);
-                setCurrentPlayingSrc(data.mainSrc); 
-
-            } catch (error) {
-                console.error("문제 데이터를 불러오는 데 실패했습니다:", error);
-                setProblemTitle("데이터 로드 실패");
-            }
-        };
-        fetchProblemData();
-        
         const audio = audioRef.current;
         if (!audio) return;
 
+        // 1. 초기 데이터 설정 및 TTS 로드 트리거 함수
+        const triggerInitialLoad = async () => {
+            // 초기 데이터 설정 (TTS 텍스트가 location.state에서 넘어왔다고 가정)
+            if (!location.state?.problemTitle) {
+                setProblemTitle("기본 듣기 파일 제목 (데이터 로드됨)"); 
+                setTtsText("기본 해설 텍스트입니다.");
+            }
+            
+            setHeaderTitle("PDF 변환 결과 재생"); 
+
+            // 🎯 TTS 텍스트가 유효하고, 아직 로드 시도를 하지 않았다면 (Ref 사용)
+            const isTextValid = ttsText && ttsText !== "PDF에서 추출된 해설 텍스트가 없습니다. 기본 텍스트를 사용합니다.";
+            
+            if (isTextValid && !initialTtsAttempted.current) {
+                 initialTtsAttempted.current = true; // 로드 시도 플래그 설정
+                 
+                 // TTS 로드 및 자동 재생 시작 (이것이 이제 기본 동작)
+                 await handleTtsPlay(); 
+            }
+        };
+
+        triggerInitialLoad();
+        
+        document.title = problemTitle; 
+        
+        // 2. 오디오 이벤트 리스너 설정 (기존 로직 유지)
         const onLoadedMetadata = () => {
             setDuration(audio.duration);
             audio.playbackRate = speeds[INITIAL_SPEED_INDEX];
@@ -268,8 +362,8 @@ const AudioPage = () => {
             audio.removeEventListener('timeupdate', onTimeUpdate);
             audio.removeEventListener('ended', onEnded);
         };
-    }, [currentPlayingSrc]); 
-
+        // ttsText가 변경되더라도 자동 로드가 다시 실행되도록 의존성 배열에 포함
+    }, [currentPlayingSrc, problemTitle, location.state, ttsText, handleTtsPlay]); 
 
     return (
         <div className="player-container">
@@ -278,22 +372,10 @@ const AudioPage = () => {
                 <button onClick={toggleGoHome} className="back-button" >
                     <BackIcon /> 
                 </button>
-                <span className="header-title">{problemTitle}</span>
+                <span className="header-title">{headerTitle}</span>
             </header>
 
-            <div className="tts-input-area">
-                <label className="tts-input-label">
-                    📥 해설 텍스트 (TTS 입력)
-                </label>
-                <textarea 
-                    value={ttsText} 
-                    onChange={(e) => setTtsText(e.target.value)}
-                    rows="4" 
-                    className="tts-textarea"
-                    placeholder="PDF에서 추출된 해설 텍스트가 표시됩니다."
-                />
-            </div>
-
+            {/* 🚨 진행 바 컨테이너 */}
             <div 
                 ref={progressContainerRef} 
                 id="progress-container" 
@@ -301,19 +383,21 @@ const AudioPage = () => {
                 onTouchStart={handleTouchStart}
             >
                 <div 
-                    ref={progressFillRef} 
+                    ref={progressFillRef} // 👈 진행도 채움 바
                     id="progress-fill" 
                     className="progress-fill"
                     style={{
                         transition: isSeeking ? 'none' : 'width 0.3s linear',
                     }} 
                 ></div>
-
+                
+                
                 <span id="problem-title">
                     {ttsLoading ? '음원 생성 중...' : problemTitle}
                 </span>
             </div>
 
+            {/* 메인 오디오 소스는 currentPlayingSrc를 동적으로 사용 */}
             <audio 
                 ref={audioRef} 
                 id="my-audio" 
@@ -368,41 +452,26 @@ const AudioPage = () => {
                     </div>
                     
                     <button 
-                        id="answer-play-btn" 
-                        onClick={handleAnswerPlay} 
-                        className="primary-btn answer-play-btn"
-                        disabled={!answerAudioSrc} 
-                    >
-                        답 재생하기
-                    </button>
-                </div>
-
-                <button 
                     id="explanation-play-btn" 
-                    onClick={handleSolvePlay}
-                    className={`primary-btn explanation-play-btn ${ttsLoading ? 'is-loading' : ''}`}
-                    disabled={ttsLoading || !ttsText} 
+                    onClick={handleTtsPlay}
+                    className={`primary-btn answer-play-btn ${ttsLoading ? 'is-loading' : ''}`}
+                    disabled={ttsLoading || !ttsText || ttsText === "PDF에서 추출된 해설 텍스트가 없습니다. 기본 텍스트를 사용합니다."} 
                 >
-                    {ttsLoading ? '음성 변환 중...' : '해설 재생하기 (TTS)'}
+                    {ttsLoading ? '음성 생성 중...' : '해설 음성 재생 (TTS)'}
                 </button>
-
-                {/* TTS 다운로드 링크 추가 */}
-                <div className="action-row action-row-full">
-                    <button 
-                        id="download-tts-btn" 
-                        className="secondary-btn prev-next-btn download-btn"
-                        disabled={!currentPlayingSrc || !currentPlayingSrc.startsWith('data:audio')}
-                    >
-                        <a 
-                            href={currentPlayingSrc && currentPlayingSrc.startsWith('data:audio') ? currentPlayingSrc : '#'} 
-                            download="해설_음성_TTS.mp3"
-                            className="download-link"
-                        >
-                            TTS 음원 다운로드
-                        </a>
-                    </button>
                 </div>
 
+
+                {/* 하단의 다운로드 버튼 (두 번째 다운로드 버튼) */}
+                <button 
+                    id="explanation-download-btn" 
+                    onClick={handleDownloadSolve} 
+                    className={`primary-btn explanation-play-btn ${ttsLoading ? 'is-loading' : ''}`}
+                    disabled={ttsLoading || !ttsText || ttsText === "PDF에서 추출된 해설 텍스트가 없습니다. 기본 텍스트를 사용합니다."} 
+                >
+                    {ttsLoading ? '음성 생성 중...' : '해설 음성 다운로드'}
+                </button>
+                
                 <div className="action-row">
                     <button id="prev-btn" className="secondary-btn prev-next-btn">
                         이전 문제

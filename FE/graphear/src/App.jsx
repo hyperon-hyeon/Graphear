@@ -3,6 +3,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 import Logo from './pages/LogoPage/LogoPage.jsx';
 import Home from './pages/HomePage/HomePage.jsx';
+import PDF from './pages/PDFPage/PDFUploader.jsx';
+import Audio from './pages/AudioPage/FinalAudioPage.jsx';
 
 const ProtectedRoute = ({ children }) => {
   return children; 
@@ -46,15 +48,15 @@ function App() {
         </ProtectedRoute>
       } />
 
-      <Route path="/pdf-converter" element={
+      <Route path="/pdf-extractor" element={
         <ProtectedRoute>
-          <Logo handleLogout={handleLogout} />
+          <PDF handleLogout={handleLogout} />
         </ProtectedRoute>
       } />
 
-      <Route path="/solve" element={
+      <Route path="/listen" element={
         <ProtectedRoute>
-          <Logo handleLogout={handleLogout} />
+          <Audio handleLogout={handleLogout} />
         </ProtectedRoute>
       } />
 
