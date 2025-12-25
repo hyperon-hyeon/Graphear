@@ -20,6 +20,8 @@
     justify-content: center;
     align-items: center; 
     padding: 20px;
+    width: 90vw; 
+    max-width: 1200px;
 }
 
 .pdf-uploader-panel{
@@ -70,6 +72,8 @@
     font-weight: 700;
     font-size: x-large;
     padding: 5px 0;
+    word-break: keep-all;  /* 한글/영어 단어 단위로 줄바꿈 */
+    overflow-wrap: break-word; /* 너무 긴 단어만 줄바꿈 */
 }
 
 .hidden-file-input {
@@ -140,4 +144,89 @@
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+/* 1. 선택된 상태의 라벨: 배경을 투명하게 하고 높이를 넉넉하게 */
+.file-label-selected {
+    background-color: transparent; 
+    border: none; /* 테두리 없애기 (깔끔하게) */
+    color: black;
+    height: auto;
+    min-height: 350px;
+    width: 95%;
+    cursor: default; /* 커서 기본으로 (버튼에만 손가락 표시) */
+}
+
+/* 2. 미리보기 박스: 가로(Row) 배치 */
+.pdf-preview-box {
+    display: flex;
+    flex-direction: row;
+    align-items: center;     /* 수직 중앙 정렬 */
+    justify-content: center; /* 수평 중앙 정렬 */
+    gap: 60px;               /* 이미지와 텍스트 사이 간격 */
+    width: 100%;
+    gap: 80px;
+}
+
+/* 3. 왼쪽: PDF 캔버스(이미지) 스타일 */
+.react-pdf__Page__canvas {
+    border: 1px solid #ddd;
+    box-shadow: 8px 8px 15px rgba(0,0,0,0.2); /* 그림자 효과 */
+    border-radius: 8px;
+    display: block;
+    background-color: white;
+}
+
+/* 4. 오른쪽: 텍스트와 버튼을 세로로 정렬 */
+.pdf-preview-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* 왼쪽 정렬 */
+    gap: 20px;
+}
+
+/* 5. 파일명 스타일 (아주 크게) */
+.file-name {
+    font-weight: 800;
+    font-size: 2.8rem; /* 제목 크기 */
+    color: black;
+    line-height: 1.2;
+    text-align: left;
+    word-break: break-all;
+    max-width: 450px;
+}
+
+/* 6. [NEW] 다시 선택하기 버튼 스타일 */
+.reselect-button {
+    background-color: black;
+    color: var(--graphear-yellow); /* 노란색 글씨 */
+    font-size: 1.5rem;
+    font-weight: 700;
+    padding: 12px 24px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    display: inline-block;
+    text-align: center;
+}
+
+/* 버튼에 마우스 올렸을 때 효과 */
+.reselect-button:hover {
+    transform: scale(1.05); /* 살짝 커짐 */
+    background-color: #333;
+}
+
+/* 모바일 대응: 화면 작아지면 세로로 변경 */
+@media (max-width: 900px) {
+    .pdf-preview-box {
+        flex-direction: column;
+        gap: 20px;
+    }
+    .pdf-preview-right {
+        align-items: center; /* 모바일에서는 중앙 정렬 */
+    }
+    .file-name {
+        font-size: 1.8rem;
+        text-align: center;
+    }
 }

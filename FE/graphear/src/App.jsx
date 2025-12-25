@@ -12,7 +12,6 @@ const ProtectedRoute = ({ children }) => {
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(true);
-  //const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
   
   const DUMMY_USER = {
     studentName: '김공부',
@@ -23,10 +22,6 @@ function App() {
       };
       handleInitialSetup();
     }, []);
-
-    const handleLoginSuccess = () => {
-      console.log('더미 로그인 성공 처리');
-    };
 
     const handleLogout = () => {
       console.log('더미 로그아웃 처리');
@@ -48,13 +43,15 @@ function App() {
         </ProtectedRoute>
       } />
 
-      <Route path="/pdf-extractor" element={
+      {/* 🚨 수정됨: HomePage.jsx의 요청대로 주소 변경 (/pdf-extractor -> /pdf-converter) */}
+      <Route path="/pdf-converter" element={
         <ProtectedRoute>
           <PDF handleLogout={handleLogout} />
         </ProtectedRoute>
       } />
 
-      <Route path="/listen" element={
+      {/* 🚨 수정됨: HomePage.jsx의 요청대로 주소 변경 (/listen -> /solve) */}
+      <Route path="/solve" element={
         <ProtectedRoute>
           <Audio handleLogout={handleLogout} />
         </ProtectedRoute>

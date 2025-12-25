@@ -237,7 +237,7 @@ const handleGoToPdfPage = () => {
         setIsPlaying(false);
     }
     // '/pdf' 경로로 이동
-    navigate('/pdf-extractor');
+    navigate('/pdf-converter');
 };
 
 
@@ -253,13 +253,88 @@ const handleGoToPdfPage = () => {
             audioRef.current.playbackRate = speeds[newIndex];
         }
     };
-    const seekToPosition = useCallback(() => { /* TODO: Seeking 로직 구현 필요 */ }, []);
-    const handleMouseDown = (e) => { /* TODO: Seeking 로직 구현 필요 */ };
-    const handleMouseMove = useCallback((e) => { /* TODO: Seeking 로직 구현 필요 */ }, [isSeeking, seekToPosition]);
-    const handleMouseUp = () => { /* TODO: Seeking 로직 구현 필요 */ };
-    const handleTouchMove = (e) => { /* TODO: Seeking 로직 구현 필요 */ };
-    const handleTouchStart = (e) => { /* TODO: Seeking 로직 구현 필요 */ };
-    const handleTouchEnd = () => { /* TODO: Seeking 로직 구현 필요 */ };
+    // ----------------------------------------------------
+    // 🖱️ & 👆 재생바 클릭 및 드래그 로직 (Seeking 구현)
+    // ----------------------------------------------------
+
+    // 1. 공통 로직: 마우스/터치 좌표를 시간으로 변환하고 이동
+    const seekToPosition = useCallback((clientX) => {
+        const audio = audioRef.current;
+        const container = progressContainerRef.current;
+        if (!audio || !container || !duration) return;
+
+        const { left, width } = container.getBoundingClientRect();
+        
+        // 클릭한 위치의 비율 계산 (0.0 ~ 1.0)
+        let percent = (clientX - left) / width;
+        // 범위 벗어남 방지 (0보다 작거나 1보다 크면 잘라냄)
+        percent = Math.min(Math.max(percent, 0), 1);
+
+        const newTime = percent * duration;
+
+        // 실제 오디오 이동
+        if (Number.isFinite(newTime)) {
+            audio.currentTime = newTime;
+            setCurrentTime(newTime); // UI 시간 즉시 업데이트
+
+            // 드래그 중일 때 바의 길이를 즉각적으로 반응하게 함
+            if (progressFillRef.current) {
+                progressFillRef.current.style.width = `${percent * 100}%`;
+            }
+        }
+    }, [duration]);
+
+    // 2. [마우스] 드래그 중 (window에 붙일 이벤트)
+    const onWindowMouseMove = useCallback((e) => {
+        seekToPosition(e.clientX);
+    }, [seekToPosition]);
+
+    // 3. [마우스] 드래그 끝
+    const onWindowMouseUp = useCallback(() => {
+        setIsSeeking(false);
+        // 이벤트 제거 (청소)
+        window.removeEventListener('mousemove', onWindowMouseMove);
+        window.removeEventListener('mouseup', onWindowMouseUp);
+    }, [onWindowMouseMove]);
+
+    // 4. [마우스] 시작 (프로그레스 바 클릭 시)
+    const handleMouseDown = (e) => {
+        // 드래그 시작 상태로 변경 (부드러운 transition 끄기 위함)
+        setIsSeeking(true);
+        seekToPosition(e.clientX); // 클릭한 곳으로 즉시 이동
+
+        // 마우스가 바 밖으로 나가도 드래그 되도록 window에 이벤트 등록
+        window.addEventListener('mousemove', onWindowMouseMove);
+        window.addEventListener('mouseup', onWindowMouseUp);
+    };
+
+    // 5. [터치] 드래그 중 (모바일)
+    const onWindowTouchMove = useCallback((e) => {
+        // 멀티터치 중 첫 번째 손가락 기준
+        seekToPosition(e.touches[0].clientX);
+    }, [seekToPosition]);
+
+    // 6. [터치] 드래그 끝
+    const onWindowTouchEnd = useCallback(() => {
+        setIsSeeking(false);
+        window.removeEventListener('touchmove', onWindowTouchMove);
+        window.removeEventListener('touchend', onWindowTouchEnd);
+    }, [onWindowTouchMove]);
+
+    // 7. [터치] 시작
+    const handleTouchStart = (e) => {
+        setIsSeeking(true);
+        seekToPosition(e.touches[0].clientX);
+
+        window.addEventListener('touchmove', onWindowTouchMove);
+        window.addEventListener('touchend', onWindowTouchEnd);
+    };
+
+    // (기존에 연결된 빈 함수들은 더 이상 필요 없지만, JSX 연결을 위해 남겨두거나 삭제 가능)
+    const handleMouseMove = () => {}; 
+    const handleMouseUp = () => {};
+    const handleTouchMove = () => {};
+    const handleTouchEnd = () => {};
 
     // ----------------------------------------------------
     // 초기 로드 및 TTS 자동 로드 트리거 Effect
@@ -324,6 +399,43 @@ const handleGoToPdfPage = () => {
         // ttsText가 변경되더라도 자동 로드가 다시 실행되도록 의존성 배열에 포함
     }, [currentPlayingSrc, problemTitle, location.state, ttsText, handleTtsPlay]); 
 
+    // ----------------------------------------------------
+    // 🎹 키보드 단축키 설정 (방향키로 10초 이동)
+    // ----------------------------------------------------
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            const audio = audioRef.current;
+            if (!audio) return;
+
+            // 왼쪽 화살표: 10초 되감기
+            if (e.key === 'ArrowLeft') {
+                audio.currentTime = Math.max(0, audio.currentTime - 10);
+            } 
+            // 오른쪽 화살표: 10초 빨리 감기
+            else if (e.key === 'ArrowRight') {
+                audio.currentTime = Math.min(audio.duration, audio.currentTime + 10);
+            }
+            // (옵션) 스페이스바: 재생/일시정지 (화면 스크롤 방지 포함)
+            else if (e.code === 'Space') {
+                e.preventDefault(); // 스페이스바 누를 때 스크롤 내려가는 것 방지
+                if (audio.paused) {
+                    audio.play().then(() => setIsPlaying(true)).catch(() => {});
+                } else {
+                    audio.pause();
+                    setIsPlaying(false);
+                }
+            }
+        };
+
+        // 이벤트 리스너 등록
+        window.addEventListener('keydown', handleKeyDown);
+
+        // 뒷정리 (컴포넌트 사라질 때 리스너 제거)
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, []); // 빈 배열: 처음 한 번만 등록
+    
     return (
         <div className="player-container">
             
