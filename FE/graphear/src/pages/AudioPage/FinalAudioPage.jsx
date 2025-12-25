@@ -237,7 +237,7 @@ const handleGoToPdfPage = () => {
         setIsPlaying(false);
     }
     // '/pdf' 경로로 이동
-    navigate('/pdf-extractor');
+    navigate('/pdf-converter');
 };
 
 
