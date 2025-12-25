@@ -54,7 +54,7 @@ const PDFUploader = () => {
                 console.log('✅ PDF 추출 성공! 텍스트 내용:', data.text);
                 
                 setExtractedText(data.text); 
-                navigate('/listen', { state: { extractedText: data.text, problemTitle: selectedFile.name } });
+                navigate('/solve', { state: { extractedText: data.text, problemTitle: selectedFile.name } });
 
             } else {
                 const errorData = await response.json().catch(() => ({ 
