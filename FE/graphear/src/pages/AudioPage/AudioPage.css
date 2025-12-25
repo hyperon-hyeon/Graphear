@@ -1,8 +1,11 @@
 .player-container {
-    min-width: 100%;
-    margin: 0 auto;
-    width: 100%; 
-    display: block;
+    width: 90vw;           /* 화면의 90% 사용 */
+    max-width: 1200px;     /* 너무 커지지 않게 제한 */
+    margin: 0 auto;        /* 화면 중앙 정렬 */
+    display: flex;         /* Flexbox 사용 */
+    flex-direction: column; /* 전체는 세로 배치지만, 내부를 가로로 나눌 예정 */
+    overflow: hidden;
+    padding: 20px;
 }
 
 .audio-header {
